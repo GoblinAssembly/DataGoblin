@@ -25,6 +25,7 @@ futures-util = "0.3"
 chrono = "0.4"
 rust_decimal = "1"
 uuid = "1"
+same-file = "1"
 tempfile = "3"
 sha2 = "0.10"
 keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }

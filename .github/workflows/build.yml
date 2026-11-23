@@ -32,6 +32,20 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev libdbus-1-dev
       - run: npm ci
       - run: npm test
-      - run: npm run build
       - run: cargo test --locked --manifest-path src-tauri/Cargo.toml --target ${{ matrix.target }}
-      - run: npm run tauri -- build --no-bundle --target ${{ matrix.target }}
+      - name: Build desktop executable
+        if: runner.os != 'macOS'
+        run: npm run tauri -- build --no-bundle --target ${{ matrix.target }}
+      - name: Package macOS installer
+        if: runner.os == 'macOS'
+        run: npm run tauri -- build --target ${{ matrix.target }} --bundles dmg --config '{"bundle":{"createUpdaterArtifacts":false}}'
+      - name: Verify disk image
+        if: runner.os == 'macOS'
+        run: hdiutil verify src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+      - name: Upload macOS installer
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: DataGoblin-${{ matrix.target }}-installer
+          path: src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+          if-no-files-found: error

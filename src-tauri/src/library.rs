@@ -170,7 +170,9 @@ fn store_query(root: &Path, query: &SavedQuery) -> Result<(), String> {
     atomic_write(&metadata, &serde_json::to_vec_pretty(query).map_err(fail)?)?;
     if let Some(previous) = previous {
         let previous_path = safe_path(root, &relative_path(&previous)?)?;
-        if previous_path != path && previous_path.exists() {
+        if previous_path != path && previous_path.exists()
+            && !same_file::is_same_file(&previous_path, &path).map_err(fail)?
+        {
             fs::remove_file(previous_path).map_err(fail)?;
         }
     }
@@ -345,6 +347,18 @@ mod tests {
         query.sql = "SELECT 43;".into();
         store_query(&root, &query).unwrap();
         assert!(!old.exists());
+        assert_eq!(read_queries(&root).unwrap(), vec![query]);
+    }
+    #[test]
+    fn case_only_rename_preserves_saved_sql() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = prepare_root(dir.path()).unwrap();
+        let mut query = sample();
+        query.name = "revenue".into();
+        store_query(&root, &query).unwrap();
+        query.name = "Revenue".into();
+        query.sql = "SELECT 43;".into();
+        store_query(&root, &query).unwrap();
         assert_eq!(read_queries(&root).unwrap(), vec![query]);
     }
     #[test]
