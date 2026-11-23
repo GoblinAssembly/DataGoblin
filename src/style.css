@@ -432,6 +432,7 @@ code,pre,kbd,.cell-viewer textarea{font-family:var(--font-mono)}
 /* The existing app header replaces native Windows chrome. */
 .custom-titlebar { padding-right: 0; user-select: none; }
 .custom-titlebar .brand > * { pointer-events: none; }
+.development-label { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 500; color: var(--warning); background: color-mix(in srgb, var(--warning) 15%, transparent); }
 .app-version { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .window-controls { display: flex; align-self: stretch; height: var(--titlebar-height); margin-left: 4px; }
 .window-controls button { width: 44px; border-radius: 0; color: var(--fg); }

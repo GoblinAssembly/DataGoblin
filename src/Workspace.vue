@@ -5,6 +5,8 @@ import { SavedQuery } from './types';
 import { type MenuPosition } from './ContextMenu';
 import { SqlTarget } from './editorNavigation';
 import { type OutputEvent } from './QueryOutput';
+import { useEditorPreferences } from './editorPreferences';
+import { shortcutIds, shortcutDefinitions, shortcutLabel, eventBinding, type Shortcut } from './shortcuts';
 import WindowControls from './WindowControls.vue';
 import { version as appVersion } from '../package.json';
 import AppUpdater from './AppUpdater.vue';
@@ -85,6 +87,9 @@ import ConnectionDialog from './ConnectionDialog.vue';
 defineOptions({
   inheritAttrs: false,
 });
+const editorPreferences = useEditorPreferences();
+const bindingLabel = (id: Shortcut) => shortcutLabel(editorPreferences.binding(id));
+const developmentBuild = import.meta.env.DEV;
 const _store = useWorkspacePanels();
 const panels = computed(() => _store.panels);
 const togglePanel = computed(() => _store.togglePanel);
@@ -1633,44 +1638,45 @@ watchMounted(
   () => {
     const key = (event: KeyboardEvent) => {
       if (
-        !(event.ctrlKey || event.metaKey) ||
+        event.repeat ||
         event.defaultPrevented ||
         document.querySelector('[aria-modal="true"]')
       )
         return;
-      if (event.key === 'PageUp' || event.key === 'PageDown') {
+      const binding = eventBinding(event);
+      const matches = (id: Shortcut) => binding === editorPreferences.binding(id);
+      if (matches('previous') || matches('next')) {
         const { tabs, tab } = shortcuts.value;
         if (tabs.length) {
           event.preventDefault();
           const index = tabs.findIndex((t) => t.id === tab?.id);
           setActive(
             tabs[
-              (index + (event.key === 'PageDown' ? 1 : tabs.length - 1)) %
+              (index + (matches('next') ? 1 : tabs.length - 1)) %
                 tabs.length
             ].id,
           );
           setResultIndex(0);
         }
       }
-      if (event.key === ',') {
+      if (matches('settings')) {
         event.preventDefault();
         setSettingsOpen(true);
       }
       if (
-        event.shiftKey &&
-        event.key.toLowerCase() === 'h' &&
+        matches('history') &&
         shortcuts.value.tab
       ) {
         event.preventDefault();
         setHistoryOpen((v) => !v);
       }
-      if (event.altKey && event.key.toLowerCase() === 'n') {
+      if (matches('newTab')) {
         event.preventDefault();
         shortcuts.value.newTab();
       }
     };
-    document.addEventListener('keydown', key);
-    return () => document.removeEventListener('keydown', key);
+    document.addEventListener('keydown', key, true);
+    return () => document.removeEventListener('keydown', key, true);
   },
 );
 function openHistory(entry: QueryHistoryEntry) {
@@ -1723,6 +1729,7 @@ const document = globalThis.document;
         <img src="/goblin.svg" alt="" />
         <strong>DataGoblin</strong>
         <span class="app-version" :title="`DataGoblin version ${appVersion}`">v{{ appVersion }}</span>
+        <span v-if="developmentBuild" class="development-label">Development</span>
         <span class="alpha">EARLY ACCESS</span>
       </div>
       <WorkspaceControls
@@ -1915,7 +1922,7 @@ const document = globalThis.document;
               <button
                 class="icon-button"
                 aria-label="Format SQL"
-                :title="`Format SQL (selection or entire query) · ${mod}+Alt+L`"
+                :title="`Format SQL (selection or entire query) · ${bindingLabel('format')}`"
                 @click="() => editorHandle?.format()"
               >
                 <AlignLeft :size="17"></AlignLeft>
@@ -2403,7 +2410,7 @@ const document = globalThis.document;
                     </div>
                     <h3>Ready to run</h3>
                     <p>Run your query to view and explore its results.</p>
-                    <span>Ctrl / Cmd + Enter to run the current statement</span>
+                    <span>{{ editorPreferences.vim ? 'Use :RunLine to run the current line' : bindingLabel('run') + ' to run the current statement' }}</span>
                   </div>
                 </template>
               </template>
@@ -2676,18 +2683,12 @@ const document = globalThis.document;
             </div>
             <template
               v-for="[key, action] in [
-                [mod + ' + Enter', 'Run selection or current statement'],
-                [mod + ' + S', 'Save SQL file'],
-                [mod + ' + Alt + L', 'Format SQL selection or entire query'],
+                ...shortcutIds.map(id => [bindingLabel(id), shortcutDefinitions[id][0]]),
                 ['Ctrl + Space', 'Show autocomplete'],
                 ['sel + Tab', 'Expand SELECT template'],
                 [mod + ' + /', 'Toggle line comment'],
                 [mod + ' + F', 'Find in query'],
                 [mod + ' + Z', 'Undo'],
-                [mod + ' + ,', 'Settings'],
-                [mod + ' + Shift + H', 'Query history'],
-                [mod + ' + Alt + N', 'New query'],
-                [mod + ' + Page Up / Down', 'Previous / next query tab'],
                 ['Escape', 'Dismiss dialog or popover'],
               ]"
               :key="key"

@@ -690,6 +690,14 @@ fn main() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .setup(|app| {
+            if tauri::is_dev() {
+                if let Some(window) = app.get_webview_window("main") {
+                    window.set_title("DataGoblin (development)")?;
+                }
+            }
+            Ok(())
+        })
         .manage(Runtime::default())
         .manage(library::LibraryLock::default())
         .manage(history::HistoryLock::default())

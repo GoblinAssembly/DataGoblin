@@ -11,6 +11,7 @@ import {
   keymap,
 } from '@codemirror/view';
 import { vim, getCM } from '@replit/codemirror-vim';
+import { configureMappings, vimRun } from './editorVim';
 import { useEditorPreferences } from './editorPreferences';
 import { basicSetup } from 'codemirror';
 import { sqlEditorLanguage } from './sqlCompletion';
@@ -48,7 +49,11 @@ watchMounted(
 );
 const preferences = useEditorPreferences();
 const vimConfiguration = new Compartment();
-const vimExtension = () => preferences.vim ? Prec.highest(vim({ status: true })) : [];
+const vimExtension = () => {
+  if (!preferences.vim) return [];
+  configureMappings(preferences.mappings);
+  return Prec.highest(vim({ status: true }));
+};
 const appearance = shallowRef(new Compartment());
 const host = shallowRef<HTMLDivElement | null>(null);
 const editorView = shallowRef<EditorView | null | null>(null);
@@ -78,6 +83,42 @@ const formatQuery = () => {
   }
   view.focus();
 };
+const shortcutConfiguration = new Compartment();
+const editorShortcuts = () => Prec.highest(keymap.of([
+  {
+    key: preferences.binding('run'),
+    run: (view) => {
+      if (preferences.vim && preferences.binding('run') === 'Mod-Enter' && !navigator.platform.includes('Mac')) return false;
+      const selection = view.state.selection.main;
+      const doc = view.state.doc.toString();
+      const text = selection.empty
+        ? statementAt(doc, selection.head, callbacks.value.engine)
+        : view.state.sliceDoc(selection.from, selection.to);
+      const from = selection.empty
+        ? Math.max(0, doc.lastIndexOf(text, selection.head))
+        : selection.from;
+      callbacks.value.onRun(text, from);
+      return true;
+    },
+  },
+  {
+    key: preferences.binding('format'),
+    run: () => {
+      formatQuery();
+      return true;
+    },
+  },
+  {
+    key: preferences.binding('save'),
+    run: () => {
+      callbacks.value.onSave();
+      return true;
+    },
+  },
+]));
+watchMounted(() => [preferences.binding('run'), preferences.binding('format'), preferences.binding('save')], () => {
+  editorView.value?.dispatch({ effects: shortcutConfiguration.reconfigure(editorShortcuts()) });
+});
 defineExpose(
   (() => ({
     format: formatQuery,
@@ -94,6 +135,8 @@ watchMounted(
         doc: callbacks.value.value,
         extensions: [
           vimConfiguration.of(vimExtension()),
+          vimRun.of((text, from) => callbacks.value.onRun(text, from)),
+          shortcutConfiguration.of(editorShortcuts()),
           basicSetup,
           executionMarkers,
           sqlConfiguration.value.of(
@@ -206,35 +249,6 @@ watchMounted(
           }),
           Prec.highest(
             keymap.of([
-              {
-                key: 'Mod-Enter',
-                run: (view) => {
-                  const selection = view.state.selection.main;
-                  const doc = view.state.doc.toString();
-                  const text = selection.empty
-                    ? statementAt(doc, selection.head, callbacks.value.engine)
-                    : view.state.sliceDoc(selection.from, selection.to);
-                  const from = selection.empty
-                    ? Math.max(0, doc.lastIndexOf(text, selection.head))
-                    : selection.from;
-                  callbacks.value.onRun(text, from);
-                  return true;
-                },
-              },
-              {
-                key: 'Mod-Alt-l',
-                run: () => {
-                  formatQuery();
-                  return true;
-                },
-              },
-              {
-                key: 'Mod-s',
-                run: () => {
-                  callbacks.value.onSave();
-                  return true;
-                },
-              },
               {
                 key: 'Tab',
                 run: (view) => {

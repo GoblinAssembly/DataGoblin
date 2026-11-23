@@ -9,7 +9,7 @@ export default defineNuxtConfig({
   app: {
     rootId: 'root',
     head: {
-      title: 'DataGoblin',
+      title: process.env.NODE_ENV === 'development' ? 'DataGoblin (development)' : 'DataGoblin',
       htmlAttrs: { lang: 'en' },
       link: [{ rel: 'icon', type: 'image/svg+xml', href: '/goblin.svg' }],
       meta: [{ name: 'theme-color', content: '#101513' }],
