@@ -82,7 +82,14 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.update-button { font: inherit; font-size: 12px; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 5px; padding: 4px 8px; cursor: pointer; }
-.update-button:disabled { opacity: .6; cursor: default; }
+.update-button {
+  font-size: 12px;
+  line-height: 16px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 7px 10px;
+  white-space: nowrap;
+}
+.update-button:disabled { opacity: .36; cursor: not-allowed; }
 .update-overlay { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; background: #101827ee; color: white; }
 </style>
