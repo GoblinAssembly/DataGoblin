@@ -126,6 +126,9 @@ it('reverts SQL NULL without sending an update', async () => {
   }} onExport={vi.fn()} onReload={vi.fn()} />);
   await screen.findByText('Double-click to edit · Primary keys are read-only');
   await fireEvent.doubleClick(screen.getByText('value'));
+  // Vue's capture listener timestamps the event and skips newly attached listeners on the same tick.
+  const editorOpenedAt = Date.now();
+  await waitFor(() => expect(Date.now()).toBeGreaterThan(editorOpenedAt));
   await fireEvent.keyDown(screen.getByLabelText('Cell value'), {
     key: 'Delete',
     ctrlKey: true

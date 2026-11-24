@@ -155,7 +155,7 @@ const document = globalThis.document;
                 <span>{{ shortcutDefinitions[id][0] }}</span>
                 <button class="secondary-button" :aria-label="'Rebind ' + shortcutDefinitions[id][0]"
                   @click="recording = id" @blur="recording = null" @keydown="record($event, id)">
-                  {{ recording === id ? 'Press shortcut…' : shortcutLabel(editorPreferences.binding(id)) }}
+                  {{ recording === id ? 'Press shortcutâ€¦' : shortcutLabel(editorPreferences.binding(id)) }}
                 </button>
               </div>
               <template v-if="editorPreferences.vim">
