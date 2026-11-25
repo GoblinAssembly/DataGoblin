@@ -78,7 +78,7 @@ const column = computed(() => props.column);
           const _onMove = onMove!;
           event.stopPropagation();
           const td = (event.currentTarget as HTMLInputElement).closest('td')!;
-          if (event.ctrlKey && event.key === 'Delete') {
+          if ((event.ctrlKey || event.metaKey) && event.key === 'Delete' && !event.isComposing) {
             event.preventDefault();
             stage(null);
             td.focus();

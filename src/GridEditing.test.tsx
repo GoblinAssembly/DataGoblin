@@ -109,7 +109,7 @@ it('stages the original row index, previews before applying and refreshes once',
     apply: true
   });
 });
-it('reverts SQL NULL without sending an update', async () => {
+it.each(['ctrlKey', 'metaKey'])('reverts SQL NULL without sending an update (%s)', async modifier => {
   invoke.mockResolvedValue({
     columns: ['name']
   });
@@ -131,7 +131,7 @@ it('reverts SQL NULL without sending an update', async () => {
   await waitFor(() => expect(Date.now()).toBeGreaterThan(editorOpenedAt));
   await fireEvent.keyDown(screen.getByLabelText('Cell value'), {
     key: 'Delete',
-    ctrlKey: true
+    [modifier]: true
   });
   await screen.findByText('NULL');
   await fireEvent.click(screen.getByRole('button', {
